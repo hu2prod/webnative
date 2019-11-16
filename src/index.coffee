@@ -5,9 +5,11 @@ class mod.Connection_policy
   collection: null
   parent  : null
   options : null
+  _unset  : {}
   
   constructor : (@parent, @name, @options)->
     @collection = @parent.mongodb.collection @name
+    @_unset = {}
     if @options.user_id
       old_format_where = @format_where
       @format_where = (data, socket)=>
@@ -62,7 +64,9 @@ class mod.Connection_policy
         data.insert = res[0]
         @broadcast data, socket
       when "update"
-        await @collection.update @format_where(data, socket), {$set:@format_data(data, socket)}, {multi:true}, defer(err, res)
+        upd_hash = $set:@format_data(data, socket)
+        upd_hash.$unset = @_unset
+        await @collection.update @format_where(data, socket), upd_hash, {multi:true}, defer(err, res)
         if err
           response.error = err.toString()
         @broadcast data, socket
@@ -83,7 +87,9 @@ class mod.Connection_policy
             else
               response.list = res
           else
-            await @collection.update @format_where(data, socket), {$set:@format_data(data, socket)}, defer(err, res)
+            upd_hash = $set:@format_data(data, socket)
+            upd_hash.$unset = @_unset
+            await @collection.update @format_where(data, socket), upd_hash, defer(err, res)
             p err
             p res
             response.error = err.toString() if err
@@ -97,7 +103,9 @@ class mod.Connection_policy
           data.where =
             _id : data.hash._id
           delete data.hash._id
-          await @collection.update @format_where(data, socket), {$set:@format_data(data, socket)}, defer(err, res)
+          upd_hash = $set:@format_data(data, socket)
+          upd_hash.$unset = @_unset
+          await @collection.update @format_where(data, socket), upd_hash, defer(err, res)
           response.error = err.toString() if err
         @broadcast data, socket
       when "delete", "remove"
@@ -121,7 +129,32 @@ class mod.Connection_policy
     ret
   
   format_data : (data, socket)->
+    @_unset = _unset = {}
     ret = data.hash
+    walk = (t, path)->
+      return t if typeof t != 'object'
+      max_idx = path.length
+      if t instanceof Array
+        path.push ""
+        for v,idx in t
+          path[max_idx] = idx
+          walk v, path
+        path.pop()
+        return
+      
+      max_idx = path.length
+      path.push ""
+      for k,v of t
+        path[max_idx] = k
+        if v?.$undefined?
+          delete t[k]
+          _unset[path.join "."] = ""
+          continue
+        walk v, path
+      path.pop()
+      return
+    
+    walk data.hash, []
     @fix_oid ret
     ret
   
