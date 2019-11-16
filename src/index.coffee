@@ -65,7 +65,7 @@ class mod.Connection_policy
         @broadcast data, socket
       when "update"
         upd_hash = $set:@format_data(data, socket)
-        upd_hash.$unset = @_unset
+        upd_hash.$unset = @_unset if h_count @_unset
         await @collection.update @format_where(data, socket), upd_hash, {multi:true}, defer(err, res)
         if err
           response.error = err.toString()
@@ -88,7 +88,7 @@ class mod.Connection_policy
               response.list = res
           else
             upd_hash = $set:@format_data(data, socket)
-            upd_hash.$unset = @_unset
+            upd_hash.$unset = @_unset if h_count @_unset
             await @collection.update @format_where(data, socket), upd_hash, defer(err, res)
             p err
             p res
@@ -104,7 +104,7 @@ class mod.Connection_policy
             _id : data.hash._id
           delete data.hash._id
           upd_hash = $set:@format_data(data, socket)
-          upd_hash.$unset = @_unset
+          upd_hash.$unset = @_unset if h_count @_unset
           await @collection.update @format_where(data, socket), upd_hash, defer(err, res)
           response.error = err.toString() if err
         @broadcast data, socket
