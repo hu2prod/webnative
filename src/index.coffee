@@ -132,7 +132,7 @@ class mod.Connection_policy
     @_unset = _unset = {}
     ret = data.hash
     walk = (t, path)->
-      return t if typeof t != 'object'
+      return t if !t? or typeof t != 'object'
       max_idx = path.length
       if t instanceof Array
         path.push ""
