@@ -148,7 +148,9 @@ class mod.Connection_policy
         path[max_idx] = k
         if v?.$undefined?
           delete t[k]
-          _unset[path.join "."] = ""
+          # only top level requires explicit remove
+          if path.length == 1
+            _unset[path.join "."] = ""
           continue
         walk v, path
       path.pop()
