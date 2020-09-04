@@ -20,6 +20,6 @@
   },
   "dependencies": {
     "fy": "github:hu2prod/fy",
-    "mongodb": "^2.2.36"
+    "mongodb": "^3.6.1"
   }
 }
